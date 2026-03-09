@@ -2,6 +2,7 @@
 
 High-performance Tailwind CSS class merging for s&box, inspired by tailwind-merge.
 
+[![s&box Package](https://img.shields.io/badge/s&box-Package-blue.svg)](https://sbox.game/agelaste/tailbox_merge)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## About
