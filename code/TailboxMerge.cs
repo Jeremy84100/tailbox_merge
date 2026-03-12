@@ -236,30 +236,24 @@ namespace Tailbox
                             if ( parsed.Theme == ThemeType.Neutral )
                             {
                                 _tsConflictHashes.Add( GenerateHash( ThemeType.Neutral, parsed.ModifiersHash, parsed.GroupIdHash, parsed.IsImportant ) );
-                                _tsConflictHashes.Add( GenerateHash( ThemeType.Light, parsed.ModifiersHash, parsed.GroupIdHash, parsed.IsImportant ) );
-                                _tsConflictHashes.Add( GenerateHash( ThemeType.Dark, parsed.ModifiersHash, parsed.GroupIdHash, parsed.IsImportant ) );
                                 
                                 if ( _conflictHashesMap.TryGetValue( parsed.GroupIdHash, out var conflictingGroups ) )
                                 {
                                     foreach ( var groupHash in conflictingGroups )
                                     {
                                         _tsConflictHashes.Add( GenerateHash( ThemeType.Neutral, parsed.ModifiersHash, groupHash, parsed.IsImportant ) );
-                                        _tsConflictHashes.Add( GenerateHash( ThemeType.Light, parsed.ModifiersHash, groupHash, parsed.IsImportant ) );
-                                        _tsConflictHashes.Add( GenerateHash( ThemeType.Dark, parsed.ModifiersHash, groupHash, parsed.IsImportant ) );
                                     }
                                 }
                             }
                             else
                             {
                                 _tsConflictHashes.Add( classId );
-                                _tsConflictHashes.Add( GenerateHash( ThemeType.Neutral, parsed.ModifiersHash, parsed.GroupIdHash, parsed.IsImportant ) );
                                 
                                 if ( _conflictHashesMap.TryGetValue( parsed.GroupIdHash, out var conflictingGroups ) )
                                 {
                                     foreach ( var groupHash in conflictingGroups )
                                     {
                                         _tsConflictHashes.Add( GenerateHash( parsed.Theme, parsed.ModifiersHash, groupHash, parsed.IsImportant ) );
-                                        _tsConflictHashes.Add( GenerateHash( ThemeType.Neutral, parsed.ModifiersHash, groupHash, parsed.IsImportant ) );
                                     }
                                 }
                             }
@@ -341,16 +335,7 @@ namespace Tailbox
         private static ParsedResult ParseFast( ReadOnlySpan<char> span )
         {
             // Extract modifiers FIRST, before checking !important
-            int lastColon = -1;
-            int openBracketIndex = span.IndexOf( '[' );
-            if ( openBracketIndex != -1 )
-            {
-                lastColon = span.Slice( 0, openBracketIndex ).LastIndexOf( ':' );
-            }
-            else
-            {
-                lastColon = span.LastIndexOf( ':' );
-            }
+            int lastColon = FindLastColonSkipBrackets( span );
 
             ThemeType theme = ThemeType.Neutral;
             ReadOnlySpan<char> baseClass = span;
@@ -454,7 +439,7 @@ namespace Tailbox
 
                 while ( start < span.Length )
                 {
-                    int nextColon = span.Slice( start ).IndexOf( ':' );
+                    int nextColon = FindNextColonSkipBrackets( span.Slice( start ) );
                     if ( nextColon == -1 ) break;
 
                     var modifier = span.Slice( start, nextColon );
@@ -480,6 +465,32 @@ namespace Tailbox
 
                 return hash;
             }
+        }
+
+        private static int FindLastColonSkipBrackets( ReadOnlySpan<char> span )
+        {
+            int bracketLevel = 0;
+            for ( int i = span.Length - 1; i >= 0; i-- )
+            {
+                char c = span[i];
+                if ( c == ']' ) bracketLevel++;
+                else if ( c == '[' ) bracketLevel--;
+                else if ( c == ':' && bracketLevel == 0 ) return i;
+            }
+            return -1;
+        }
+
+        private static int FindNextColonSkipBrackets( ReadOnlySpan<char> span )
+        {
+            int bracketLevel = 0;
+            for ( int i = 0; i < span.Length; i++ )
+            {
+                char c = span[i];
+                if ( c == '[' ) bracketLevel++;
+                else if ( c == ']' ) bracketLevel--;
+                else if ( c == ':' && bracketLevel == 0 ) return i;
+            }
+            return -1;
         }
 
         private static int GetStringHash( string str )
